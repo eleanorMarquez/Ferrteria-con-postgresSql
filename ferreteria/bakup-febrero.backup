@@ -1,0 +1,1893 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 9.2.4
+-- Dumped by pg_dump version 9.2.4
+-- Started on 2015-02-05 15:05:11
+
+SET statement_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+
+--
+-- TOC entry 189 (class 3079 OID 11727)
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
+--
+
+CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
+
+
+--
+-- TOC entry 2104 (class 0 OID 0)
+-- Dependencies: 189
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
+
+
+SET search_path = public, pg_catalog;
+
+--
+-- TOC entry 208 (class 1255 OID 125630)
+-- Name: fu__categoria_pro_eliminar_activar(integer, boolean); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu__categoria_pro_eliminar_activar(pcodigo integer, pestado boolean) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+	update categoria_producto set estado = pestado where codigo_cat = pcodigo;  
+END;
+$$;
+
+
+ALTER FUNCTION public.fu__categoria_pro_eliminar_activar(pcodigo integer, pestado boolean) OWNER TO postgres;
+
+--
+-- TOC entry 227 (class 1255 OID 174996)
+-- Name: fu_cambio_password(character varying, integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_cambio_password(ppassword character varying, pcodigo integer) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+	update usuario set contrasena = MD5(ppassword) where idusuario = pcodigo; 
+END;
+$$;
+
+
+ALTER FUNCTION public.fu_cambio_password(ppassword character varying, pcodigo integer) OWNER TO postgres;
+
+--
+-- TOC entry 204 (class 1255 OID 125614)
+-- Name: fu_eliminar_activar(integer, boolean); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_eliminar_activar(pcodigo integer, pestado boolean) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+	update unidad_medida set estado = pestado where codigo = pcodigo;  
+END;
+$$;
+
+
+ALTER FUNCTION public.fu_eliminar_activar(pcodigo integer, pestado boolean) OWNER TO postgres;
+
+--
+-- TOC entry 234 (class 1255 OID 158484)
+-- Name: fu_eliminar_presentaciones_detalle(integer, integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_eliminar_presentaciones_detalle(ppresentacion integer, pcodigo_producto integer) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+	DELETE FROM detalle_presentaciones  where codigoproducto = pcodigo_producto  and codigopresentacion = ppresentacion; 
+END;
+$$;
+
+
+ALTER FUNCTION public.fu_eliminar_presentaciones_detalle(ppresentacion integer, pcodigo_producto integer) OWNER TO postgres;
+
+--
+-- TOC entry 206 (class 1255 OID 125628)
+-- Name: fu_lista_categoria_producto(boolean); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_lista_categoria_producto(pestado boolean) RETURNS refcursor
+    LANGUAGE plpgsql
+    AS $$
+declare 
+lista refcursor;  
+begin 
+	OPEN lista FOR 
+	SELECT codigo_cat, nombre, descripcion from categoria_producto  where estado = pestado;   
+return lista; 
+end 
+$$;
+
+
+ALTER FUNCTION public.fu_lista_categoria_producto(pestado boolean) OWNER TO postgres;
+
+--
+-- TOC entry 219 (class 1255 OID 125660)
+-- Name: fu_lista_presentacion(boolean); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_lista_presentacion(pestado boolean) RETURNS refcursor
+    LANGUAGE plpgsql
+    AS $$
+declare 
+lista refcursor;  
+begin 
+	OPEN lista FOR 
+	SELECT p.codigo, p.nombre, u.nombre, cantidad, p.descripcion, u.codigo  
+	from presentacion  p inner join unidad_medida u on (u.codigo=p.unidad_medida)
+	where p.estado = pestado;  
+return lista; 
+end 
+$$;
+
+
+ALTER FUNCTION public.fu_lista_presentacion(pestado boolean) OWNER TO postgres;
+
+--
+-- TOC entry 222 (class 1255 OID 158439)
+-- Name: fu_lista_presentacion_producto(integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_lista_presentacion_producto(pcodigo integer) RETURNS refcursor
+    LANGUAGE plpgsql
+    AS $$
+declare 
+lista refcursor;  
+begin 
+	OPEN lista FOR 
+	SELECT pre.codigo, pre.nombre, pre.cantidad, uni.nombre  from producto p 
+	inner join detalle_presentaciones d on (p.codigo = d.codigoproducto)
+	inner join presentacion pre on (pre.codigo=d.codigopresentacion) 
+	inner join unidad_medida  uni on (uni.codigo=pre.unidad_medida)
+	where p.codigo = pcodigo; 
+return lista; 
+end 
+$$;
+
+
+ALTER FUNCTION public.fu_lista_presentacion_producto(pcodigo integer) OWNER TO postgres;
+
+--
+-- TOC entry 229 (class 1255 OID 158483)
+-- Name: fu_lista_presentacion_producto_codigo(integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_lista_presentacion_producto_codigo(pcodigo integer) RETURNS refcursor
+    LANGUAGE plpgsql
+    AS $$
+declare 
+lista refcursor;  
+begin 
+	OPEN lista FOR 
+		SELECT pre.codigo, pre.nombre, pre.cantidad, uni.nombre, pre.descripcion  from producto p 
+	inner join detalle_presentaciones d on (p.codigo = d.codigoproducto)
+	inner join presentacion pre on (pre.codigo=d.codigopresentacion) 
+	inner join unidad_medida  uni on (uni.codigo=pre.unidad_medida)
+	where p.codigo = pcodigo; 
+return lista; 
+end 
+$$;
+
+
+ALTER FUNCTION public.fu_lista_presentacion_producto_codigo(pcodigo integer) OWNER TO postgres;
+
+--
+-- TOC entry 230 (class 1255 OID 133837)
+-- Name: fu_lista_productos(boolean); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_lista_productos(pestado boolean) RETURNS refcursor
+    LANGUAGE plpgsql
+    AS $$
+declare 
+lista refcursor;  
+begin 
+	OPEN lista FOR 
+	SELECT p.codigo, p.nombre, p.categoria, c.nombre, p.color, p.descripcion, u.codigo as codigoUnidadMedida, u.nombre as unidadMedida
+	from producto  p 
+	inner join categoria_producto  c on (p.categoria = c.codigo_cat)
+	inner join unidad_medida  u on ( u.codigo = p.unida_medida )
+	WHERE p.estado = pestado; 
+return lista; 
+end 
+$$;
+
+
+ALTER FUNCTION public.fu_lista_productos(pestado boolean) OWNER TO postgres;
+
+--
+-- TOC entry 245 (class 1255 OID 174975)
+-- Name: fu_lista_productos_busqueda(boolean, character varying); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_lista_productos_busqueda(pestado boolean, pnombre character varying) RETURNS refcursor
+    LANGUAGE plpgsql
+    AS $$
+declare 
+lista refcursor;  
+begin 
+	OPEN lista FOR 
+	SELECT p.codigo, p.nombre, p.categoria, c.nombre, p.color, p.descripcion, u.codigo as codigoUnidadMedida, u.nombre as unidadMedida
+	from producto  p 
+	inner join categoria_producto  c on (p.categoria = c.codigo_cat)
+	inner join unidad_medida  u on ( u.codigo = p.unida_medida )
+	WHERE p.estado = pestado and p.nombre like '%'||pnombre||'%'; 
+return lista; 
+end 
+$$;
+
+
+ALTER FUNCTION public.fu_lista_productos_busqueda(pestado boolean, pnombre character varying) OWNER TO postgres;
+
+--
+-- TOC entry 220 (class 1255 OID 150215)
+-- Name: fu_lista_proveedores(boolean); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_lista_proveedores(pestado boolean) RETURNS refcursor
+    LANGUAGE plpgsql
+    AS $$
+declare 
+lista refcursor;  
+begin 
+	OPEN lista FOR 
+	SELECT codigo, nombre, ruc, direccion from proveedor  where estado = pestado; 
+return lista; 
+end 
+$$;
+
+
+ALTER FUNCTION public.fu_lista_proveedores(pestado boolean) OWNER TO postgres;
+
+--
+-- TOC entry 236 (class 1255 OID 166687)
+-- Name: fu_lista_tipo_venta(boolean); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_lista_tipo_venta(pestado boolean) RETURNS refcursor
+    LANGUAGE plpgsql
+    AS $$
+declare 
+lista refcursor;  
+begin 
+	OPEN lista FOR 
+	SELECT codigo, nombre, descripcion from tipo_venta 
+	where estado = pestado; 
+	return lista; 
+end 
+$$;
+
+
+ALTER FUNCTION public.fu_lista_tipo_venta(pestado boolean) OWNER TO postgres;
+
+--
+-- TOC entry 203 (class 1255 OID 125612)
+-- Name: fu_lista_unidad_medida(boolean); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_lista_unidad_medida(pestado boolean) RETURNS refcursor
+    LANGUAGE plpgsql
+    AS $$
+declare 
+lista refcursor;  
+begin 
+	OPEN lista FOR 
+	SELECT codigo,nombre, descripcion  from unidad_medida  where estado = true;  
+return lista; 
+end 
+$$;
+
+
+ALTER FUNCTION public.fu_lista_unidad_medida(pestado boolean) OWNER TO postgres;
+
+--
+-- TOC entry 209 (class 1255 OID 125631)
+-- Name: fu_modificar_categoria_producto(character varying, character varying, integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_modificar_categoria_producto(pnombre character varying, pdescripcion character varying, pcodigo integer) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+	UPDATE categoria_producto SET nombre=pnombre, descripcion=pdescripcion
+	WHERE codigo_cat=pcodigo;
+END;
+$$;
+
+
+ALTER FUNCTION public.fu_modificar_categoria_producto(pnombre character varying, pdescripcion character varying, pcodigo integer) OWNER TO postgres;
+
+--
+-- TOC entry 228 (class 1255 OID 150235)
+-- Name: fu_modificar_producto(character varying, integer, character varying, character varying, integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_modificar_producto(pnombre character varying, pcategoria integer, pcolor character varying, pdescripcion character varying, pcodigo integer) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+ UPDATE producto SET categoria=pcategoria, color=pcolor, descripcion=pdescripcion, nombre=pnombre
+ WHERE codigo=pcodigo;
+END;
+$$;
+
+
+ALTER FUNCTION public.fu_modificar_producto(pnombre character varying, pcategoria integer, pcolor character varying, pdescripcion character varying, pcodigo integer) OWNER TO postgres;
+
+--
+-- TOC entry 216 (class 1255 OID 150194)
+-- Name: fu_modificar_producto(character varying, integer, integer, character varying, character varying, integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_modificar_producto(pnombre character varying, pcategoria integer, ppresentacion integer, pcolor character varying, pdescripcion character varying, pcodigo integer) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+ UPDATE producto SET categoria=pcategoria, presentacion=ppresentacion, color=pcolor, descripcion=pdescripcion, nombre=pnombre
+ WHERE codigo=pcodigo;
+END;
+$$;
+
+
+ALTER FUNCTION public.fu_modificar_producto(pnombre character varying, pcategoria integer, ppresentacion integer, pcolor character varying, pdescripcion character varying, pcodigo integer) OWNER TO postgres;
+
+--
+-- TOC entry 244 (class 1255 OID 174974)
+-- Name: fu_modificar_producto(character varying, integer, character varying, character varying, integer, integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_modificar_producto(pnombre character varying, pcategoria integer, pcolor character varying, pdescripcion character varying, pcodigo integer, punida_medida integer) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+ UPDATE producto SET categoria=pcategoria, color=pcolor, descripcion=pdescripcion, nombre=pnombre, unida_medida = punida_medida
+ WHERE codigo=pcodigo;
+END;
+$$;
+
+
+ALTER FUNCTION public.fu_modificar_producto(pnombre character varying, pcategoria integer, pcolor character varying, pdescripcion character varying, pcodigo integer, punida_medida integer) OWNER TO postgres;
+
+--
+-- TOC entry 224 (class 1255 OID 150221)
+-- Name: fu_modificar_proveedor(character varying, character, character varying); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_modificar_proveedor(pnombre character varying, pruc character, pdireccion character varying) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    UPDATE proveedor SET  nombre=pnombre, ruc= pruc, direccion=pdireccion
+    WHERE codigo=pcodigo;
+END;
+$$;
+
+
+ALTER FUNCTION public.fu_modificar_proveedor(pnombre character varying, pruc character, pdireccion character varying) OWNER TO postgres;
+
+--
+-- TOC entry 225 (class 1255 OID 150222)
+-- Name: fu_modificar_proveedor(character varying, character, character varying, integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_modificar_proveedor(pnombre character varying, pruc character, pdireccion character varying, pcodigo integer) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    UPDATE proveedor SET  nombre=pnombre, ruc= pruc, direccion=pdireccion
+    WHERE codigo=pcodigo;
+END;
+$$;
+
+
+ALTER FUNCTION public.fu_modificar_proveedor(pnombre character varying, pruc character, pdireccion character varying, pcodigo integer) OWNER TO postgres;
+
+--
+-- TOC entry 205 (class 1255 OID 125615)
+-- Name: fu_modificar_unidad_medida(character varying, character varying, integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_modificar_unidad_medida(pnombre character varying, pdescripcion character varying, pcodigo integer) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+	update unidad_medida set nombre = pnombre, descripcion = pdescripcion
+	where codigo = pcodigo; 
+END;
+$$;
+
+
+ALTER FUNCTION public.fu_modificar_unidad_medida(pnombre character varying, pdescripcion character varying, pcodigo integer) OWNER TO postgres;
+
+--
+-- TOC entry 215 (class 1255 OID 125678)
+-- Name: fu_presentacion_eliminar_activar(integer, boolean); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_presentacion_eliminar_activar(pcodigo integer, pestado boolean) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+	update presentacion set estado = pestado where codigo = pcodigo;  
+END;
+$$;
+
+
+ALTER FUNCTION public.fu_presentacion_eliminar_activar(pcodigo integer, pestado boolean) OWNER TO postgres;
+
+--
+-- TOC entry 218 (class 1255 OID 142002)
+-- Name: fu_presentacion_modificar(character varying, integer, double precision, character varying, integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_presentacion_modificar(pnombre character varying, punidad_medida integer, pcantidad double precision, pdescripcion character varying, pcodigo integer) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+	UPDATE presentacion SET nombre=pnombre, unidad_medida=punidad_medida, cantidad=pcantidad, descripcion=pdescripcion
+	WHERE codigo = pcodigo;
+END;
+$$;
+
+
+ALTER FUNCTION public.fu_presentacion_modificar(pnombre character varying, punidad_medida integer, pcantidad double precision, pdescripcion character varying, pcodigo integer) OWNER TO postgres;
+
+--
+-- TOC entry 212 (class 1255 OID 150193)
+-- Name: fu_producto_eliminar_activar(integer, boolean); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_producto_eliminar_activar(pcodigo integer, pestado boolean) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+	update producto set estado = pestado where codigo = pcodigo;  
+END;
+$$;
+
+
+ALTER FUNCTION public.fu_producto_eliminar_activar(pcodigo integer, pestado boolean) OWNER TO postgres;
+
+--
+-- TOC entry 221 (class 1255 OID 150220)
+-- Name: fu_proveedor_eliminar_activar(integer, boolean); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_proveedor_eliminar_activar(pcodigo integer, pestado boolean) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+	update proveedor set estado = pestado where codigo = pcodigo;  
+END;
+$$;
+
+
+ALTER FUNCTION public.fu_proveedor_eliminar_activar(pcodigo integer, pestado boolean) OWNER TO postgres;
+
+--
+-- TOC entry 207 (class 1255 OID 125629)
+-- Name: fu_reg_categoria_producto(character varying, character varying); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_reg_categoria_producto(pnombre character varying, pdescripcion character varying) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    INSERT INTO categoria_producto(nombre, descripcion)
+    VALUES (pnombre, pdescripcion);
+END;
+$$;
+
+
+ALTER FUNCTION public.fu_reg_categoria_producto(pnombre character varying, pdescripcion character varying) OWNER TO postgres;
+
+--
+-- TOC entry 239 (class 1255 OID 158458)
+-- Name: fu_reg_compra(character varying, character varying, integer, date, integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_reg_compra(pserie character varying, pnumero_factura character varying, pproveedor integer, pfecha_compra date, pusuario integer) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+codigo integer;
+BEGIN
+  INSERT INTO compra(serie, numero_factura, proveedor, fecha_compra, usuario)
+  VALUES (pserie, pnumero_factura, pproveedor, pfecha_compra, pusuario);
+  codigo = CURRVAL('compra_codigo_seq');
+  return codigo;
+END;
+$$;
+
+
+ALTER FUNCTION public.fu_reg_compra(pserie character varying, pnumero_factura character varying, pproveedor integer, pfecha_compra date, pusuario integer) OWNER TO postgres;
+
+--
+-- TOC entry 237 (class 1255 OID 166721)
+-- Name: fu_reg_compra(character varying, character varying, character varying, date, integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_reg_compra(pserie character varying, pnumero character varying, pcliente character varying, pfecha_venta date, pusuario integer) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+codigo integer;
+BEGIN
+    INSERT INTO venta(serie, numero, cliente, fecha_venta,usuario)
+    VALUES (pserie, pnumero, pcliente, pfecha_venta, pusuario);
+    codigo = CURRVAL('venta_codigo_seq');
+  return codigo;
+END;
+$$;
+
+
+ALTER FUNCTION public.fu_reg_compra(pserie character varying, pnumero character varying, pcliente character varying, pfecha_venta date, pusuario integer) OWNER TO postgres;
+
+--
+-- TOC entry 232 (class 1255 OID 158475)
+-- Name: fu_reg_detalle_compra(integer, integer, numeric); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_reg_detalle_compra(pcodigo_compra integer, pcodigo_producto integer, pcantidad numeric) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  INSERT INTO detalle_compra(codigo_compra, codigo_producto, cantidad)
+    VALUES (pcodigo_compra, pcodigo_producto, pcantidad);
+    update producto  set stock = stock + pcantidad where codigo = pcodigo_producto; 
+END;
+$$;
+
+
+ALTER FUNCTION public.fu_reg_detalle_compra(pcodigo_compra integer, pcodigo_producto integer, pcantidad numeric) OWNER TO postgres;
+
+--
+-- TOC entry 235 (class 1255 OID 166676)
+-- Name: fu_reg_detalle_compra(integer, integer, double precision); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_reg_detalle_compra(pcodigo_compra integer, pcodigo_producto integer, pcantidad double precision) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  INSERT INTO detalle_compra(codigo_compra, codigo_producto, cantidad)
+    VALUES (pcodigo_compra, pcodigo_producto, pcantidad);
+    update producto  set stock = stock + pcantidad where codigo = pcodigo_producto; 
+END;
+$$;
+
+
+ALTER FUNCTION public.fu_reg_detalle_compra(pcodigo_compra integer, pcodigo_producto integer, pcantidad double precision) OWNER TO postgres;
+
+--
+-- TOC entry 241 (class 1255 OID 166730)
+-- Name: fu_reg_detalle_venta(integer, integer, double precision, double precision); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_reg_detalle_venta(pcodigo_venta integer, pcodigo_producto integer, pcantidad double precision, pprecio double precision) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    INSERT INTO detalle_venta(codigo_venta, codigo_producto, cantidad, precio)
+    VALUES (pcodigo_venta, pcodigo_producto, pcantidad, pprecio);
+    update producto  set stock = stock - pcantidad where codigo = pcodigo_producto; 
+END;
+$$;
+
+
+ALTER FUNCTION public.fu_reg_detalle_venta(pcodigo_venta integer, pcodigo_producto integer, pcantidad double precision, pprecio double precision) OWNER TO postgres;
+
+--
+-- TOC entry 242 (class 1255 OID 174967)
+-- Name: fu_reg_detalle_venta(integer, integer, double precision, double precision, double precision); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_reg_detalle_venta(pcodigo_venta integer, pcodigo_producto integer, pcantidad double precision, pprecio double precision, pcantidad_presentacion double precision) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    INSERT INTO detalle_venta(codigo_venta, codigo_producto, cantidad, precio, cantidad_presentacion)
+    VALUES (pcodigo_venta, pcodigo_producto, pcantidad, pprecio, pcantidad_presentacion);
+    update producto  set stock = stock - pcantidad where codigo = pcodigo_producto; 
+END;
+$$;
+
+
+ALTER FUNCTION public.fu_reg_detalle_venta(pcodigo_venta integer, pcodigo_producto integer, pcantidad double precision, pprecio double precision, pcantidad_presentacion double precision) OWNER TO postgres;
+
+--
+-- TOC entry 210 (class 1255 OID 125661)
+-- Name: fu_reg_presentacion(integer, character varying, integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_reg_presentacion(punidad_medida integer, pnombre character varying, pcantidad integer) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    INSERT INTO presentacion(unidad_medida, nombre, cantidad)
+    VALUES (punidad_medida, pnombre, pcantidad);
+    
+END;
+$$;
+
+
+ALTER FUNCTION public.fu_reg_presentacion(punidad_medida integer, pnombre character varying, pcantidad integer) OWNER TO postgres;
+
+--
+-- TOC entry 211 (class 1255 OID 125677)
+-- Name: fu_reg_presentacion(integer, character varying, double precision); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_reg_presentacion(punidad_medida integer, pnombre character varying, pcantidad double precision) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    INSERT INTO presentacion(unidad_medida, nombre, cantidad)
+    VALUES (punidad_medida, pnombre, pcantidad);
+    
+END;
+$$;
+
+
+ALTER FUNCTION public.fu_reg_presentacion(punidad_medida integer, pnombre character varying, pcantidad double precision) OWNER TO postgres;
+
+--
+-- TOC entry 217 (class 1255 OID 142000)
+-- Name: fu_reg_presentacion(integer, character varying, double precision, character varying); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_reg_presentacion(punidad_medida integer, pnombre character varying, pcantidad double precision, pdescripcion character varying) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    INSERT INTO presentacion(unidad_medida, nombre, cantidad, descripcion)
+    VALUES (punidad_medida, pnombre, pcantidad, pdescripcion);
+    
+END;
+$$;
+
+
+ALTER FUNCTION public.fu_reg_presentacion(punidad_medida integer, pnombre character varying, pcantidad double precision, pdescripcion character varying) OWNER TO postgres;
+
+--
+-- TOC entry 233 (class 1255 OID 158428)
+-- Name: fu_reg_prod_presentacion(integer, integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_reg_prod_presentacion(pcodigoproducto integer, pcodigopresentacion integer) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    INSERT INTO detalle_presentaciones(codigoproducto, codigopresentacion)
+    VALUES(pcodigoproducto, pcodigopresentacion);
+END;
+$$;
+
+
+ALTER FUNCTION public.fu_reg_prod_presentacion(pcodigoproducto integer, pcodigopresentacion integer) OWNER TO postgres;
+
+--
+-- TOC entry 231 (class 1255 OID 158472)
+-- Name: fu_reg_prod_presentacion(integer, integer, numeric); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_reg_prod_presentacion(pcodigo_compra integer, pcodigo_producto integer, pcantidad numeric) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  INSERT INTO detalle_compra(codigo_compra, codigo_producto, cantidad)
+    VALUES (pcodigo_compra, pcodigo_producto, pcantidad);
+    update producto  set stock = stock + pcantidad where codigo = pcodigo_producto; 
+END;
+$$;
+
+
+ALTER FUNCTION public.fu_reg_prod_presentacion(pcodigo_compra integer, pcodigo_producto integer, pcantidad numeric) OWNER TO postgres;
+
+--
+-- TOC entry 226 (class 1255 OID 150224)
+-- Name: fu_reg_producto(character varying, integer, character varying, character varying); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_reg_producto(pnombre character varying, pcategoria integer, pcolor character varying, pdescripcion character varying) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+INSERT INTO producto(nombre, categoria, color, descripcion)
+    VALUES (pnombre, pcategoria, pcolor, pdescripcion);    
+END;
+$$;
+
+
+ALTER FUNCTION public.fu_reg_producto(pnombre character varying, pcategoria integer, pcolor character varying, pdescripcion character varying) OWNER TO postgres;
+
+--
+-- TOC entry 214 (class 1255 OID 133839)
+-- Name: fu_reg_producto(character varying, integer, integer, character varying, character varying); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_reg_producto(pnombre character varying, pcategoria integer, ppresentacion integer, pcolor character varying, pdescripcion character varying) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+INSERT INTO producto(nombre, categoria, presentacion, color, descripcion)
+    VALUES (pnombre, pcategoria, ppresentacion, pcolor, pdescripcion);    
+END;
+$$;
+
+
+ALTER FUNCTION public.fu_reg_producto(pnombre character varying, pcategoria integer, ppresentacion integer, pcolor character varying, pdescripcion character varying) OWNER TO postgres;
+
+--
+-- TOC entry 243 (class 1255 OID 174973)
+-- Name: fu_reg_producto(character varying, integer, character varying, character varying, integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_reg_producto(pnombre character varying, pcategoria integer, pcolor character varying, pdescripcion character varying, punida_medida integer) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+INSERT INTO producto(nombre, categoria, color, descripcion, unida_medida)
+    VALUES (pnombre, pcategoria, pcolor, pdescripcion, punida_medida);    
+END;
+$$;
+
+
+ALTER FUNCTION public.fu_reg_producto(pnombre character varying, pcategoria integer, pcolor character varying, pdescripcion character varying, punida_medida integer) OWNER TO postgres;
+
+--
+-- TOC entry 223 (class 1255 OID 150214)
+-- Name: fu_reg_proveedor(character varying, character, character varying); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_reg_proveedor(pnombre character varying, pruc character, pdireccion character varying) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    INSERT INTO proveedor(nombre, ruc, direccion)
+    VALUES (pnombre, pruc, pdireccion);  
+END;
+$$;
+
+
+ALTER FUNCTION public.fu_reg_proveedor(pnombre character varying, pruc character, pdireccion character varying) OWNER TO postgres;
+
+--
+-- TOC entry 202 (class 1255 OID 125611)
+-- Name: fu_reg_unidad_medida(character varying, character varying); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_reg_unidad_medida(pnombre character varying, pdescripcion character varying) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+	INSERT INTO unidad_medida(nombre, descripcion)
+    VALUES (pnombre, pdescripcion);
+END;
+$$;
+
+
+ALTER FUNCTION public.fu_reg_unidad_medida(pnombre character varying, pdescripcion character varying) OWNER TO postgres;
+
+--
+-- TOC entry 238 (class 1255 OID 166722)
+-- Name: fu_reg_venta(character varying, character varying, character varying, date, integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_reg_venta(pserie character varying, pnumero character varying, pcliente character varying, pfecha_venta date, pusuario integer) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+codigo integer;
+BEGIN
+    INSERT INTO venta(serie, numero, cliente, fecha_venta,usuario)
+    VALUES (pserie, pnumero, pcliente, pfecha_venta, pusuario);
+    codigo = CURRVAL('venta_codigo_seq');
+  return codigo;
+END;
+$$;
+
+
+ALTER FUNCTION public.fu_reg_venta(pserie character varying, pnumero character varying, pcliente character varying, pfecha_venta date, pusuario integer) OWNER TO postgres;
+
+--
+-- TOC entry 240 (class 1255 OID 166741)
+-- Name: fu_reg_venta(character varying, character varying, character varying, date, integer, integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_reg_venta(pserie character varying, pnumero character varying, pcliente character varying, pfecha_venta date, pusuario integer, ptipo_venta integer) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+codigo integer;
+BEGIN
+    INSERT INTO venta(serie, numero, cliente, fecha_venta,usuario, tipo_venta)
+    VALUES (pserie, pnumero, pcliente, pfecha_venta, pusuario, ptipo_venta);
+    codigo = CURRVAL('venta_codigo_seq');
+  return codigo;
+END;
+$$;
+
+
+ALTER FUNCTION public.fu_reg_venta(pserie character varying, pnumero character varying, pcliente character varying, pfecha_venta date, pusuario integer, ptipo_venta integer) OWNER TO postgres;
+
+--
+-- TOC entry 213 (class 1255 OID 125688)
+-- Name: fu_verificarusuario(character varying, character varying); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION fu_verificarusuario(pnombreusuario character varying, ppassword character varying) RETURNS refcursor
+    LANGUAGE plpgsql
+    AS $$
+DECLARE lista refcursor;
+begin 	
+		open lista for 
+		select idusuario, nombre_usuario, estado from usuario
+		where estado = true and nombre_usuario=pnombreusuario and contrasena = MD5(ppassword);  
+		return lista; 
+end; 
+$$;
+
+
+ALTER FUNCTION public.fu_verificarusuario(pnombreusuario character varying, ppassword character varying) OWNER TO postgres;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- TOC entry 170 (class 1259 OID 125616)
+-- Name: categoria_producto; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE categoria_producto (
+    codigo_cat integer NOT NULL,
+    nombre character varying(100) NOT NULL,
+    descripcion character varying(200),
+    estado boolean DEFAULT true NOT NULL
+);
+
+
+ALTER TABLE public.categoria_producto OWNER TO postgres;
+
+--
+-- TOC entry 171 (class 1259 OID 125619)
+-- Name: categoria_producto_codigo_cat_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE categoria_producto_codigo_cat_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.categoria_producto_codigo_cat_seq OWNER TO postgres;
+
+--
+-- TOC entry 2105 (class 0 OID 0)
+-- Dependencies: 171
+-- Name: categoria_producto_codigo_cat_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE categoria_producto_codigo_cat_seq OWNED BY categoria_producto.codigo_cat;
+
+
+--
+-- TOC entry 182 (class 1259 OID 158442)
+-- Name: compra; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE compra (
+    codigo integer NOT NULL,
+    serie character varying(5) NOT NULL,
+    numero_factura character varying(10) NOT NULL,
+    proveedor integer NOT NULL,
+    fecha_compra date NOT NULL,
+    fecha_registro date DEFAULT now() NOT NULL,
+    usuario integer NOT NULL
+);
+
+
+ALTER TABLE public.compra OWNER TO postgres;
+
+--
+-- TOC entry 181 (class 1259 OID 158440)
+-- Name: compra_codigo_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE compra_codigo_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.compra_codigo_seq OWNER TO postgres;
+
+--
+-- TOC entry 2106 (class 0 OID 0)
+-- Dependencies: 181
+-- Name: compra_codigo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE compra_codigo_seq OWNED BY compra.codigo;
+
+
+--
+-- TOC entry 183 (class 1259 OID 158459)
+-- Name: detalle_compra; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE detalle_compra (
+    codigo_compra integer NOT NULL,
+    codigo_producto integer NOT NULL,
+    cantidad numeric(14,2)
+);
+
+
+ALTER TABLE public.detalle_compra OWNER TO postgres;
+
+--
+-- TOC entry 180 (class 1259 OID 158415)
+-- Name: detalle_presentaciones; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE detalle_presentaciones (
+    codigoproducto integer,
+    codigopresentacion integer
+);
+
+
+ALTER TABLE public.detalle_presentaciones OWNER TO postgres;
+
+--
+-- TOC entry 188 (class 1259 OID 166697)
+-- Name: detalle_venta; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE detalle_venta (
+    codigo_venta integer NOT NULL,
+    codigo_producto integer NOT NULL,
+    cantidad numeric(14,2),
+    precio numeric(14,2),
+    cantidad_presentacion numeric(14,2) DEFAULT 0 NOT NULL
+);
+
+
+ALTER TABLE public.detalle_venta OWNER TO postgres;
+
+--
+-- TOC entry 173 (class 1259 OID 125636)
+-- Name: presentacion; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE presentacion (
+    codigo integer NOT NULL,
+    unidad_medida integer,
+    nombre character varying(100),
+    cantidad double precision,
+    estado boolean DEFAULT true NOT NULL,
+    descripcion character varying(200)
+);
+
+
+ALTER TABLE public.presentacion OWNER TO postgres;
+
+--
+-- TOC entry 172 (class 1259 OID 125634)
+-- Name: presentacion_codigo_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE presentacion_codigo_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.presentacion_codigo_seq OWNER TO postgres;
+
+--
+-- TOC entry 2107 (class 0 OID 0)
+-- Dependencies: 172
+-- Name: presentacion_codigo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE presentacion_codigo_seq OWNED BY presentacion.codigo;
+
+
+--
+-- TOC entry 177 (class 1259 OID 133810)
+-- Name: producto; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE producto (
+    codigo integer NOT NULL,
+    categoria integer NOT NULL,
+    color character varying(100),
+    descripcion character varying(200),
+    estado boolean DEFAULT true NOT NULL,
+    nombre character varying(100) NOT NULL,
+    stock numeric(14,2) DEFAULT 0 NOT NULL,
+    unida_medida integer NOT NULL
+);
+
+
+ALTER TABLE public.producto OWNER TO postgres;
+
+--
+-- TOC entry 176 (class 1259 OID 133808)
+-- Name: producto_codigo_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE producto_codigo_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.producto_codigo_seq OWNER TO postgres;
+
+--
+-- TOC entry 2108 (class 0 OID 0)
+-- Dependencies: 176
+-- Name: producto_codigo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE producto_codigo_seq OWNED BY producto.codigo;
+
+
+--
+-- TOC entry 179 (class 1259 OID 150207)
+-- Name: proveedor; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE proveedor (
+    codigo integer NOT NULL,
+    nombre character varying(100),
+    ruc character(11) NOT NULL,
+    direccion character varying(200) NOT NULL,
+    estado boolean DEFAULT true NOT NULL
+);
+
+
+ALTER TABLE public.proveedor OWNER TO postgres;
+
+--
+-- TOC entry 178 (class 1259 OID 150205)
+-- Name: proveedor_codigo_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE proveedor_codigo_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.proveedor_codigo_seq OWNER TO postgres;
+
+--
+-- TOC entry 2109 (class 0 OID 0)
+-- Dependencies: 178
+-- Name: proveedor_codigo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE proveedor_codigo_seq OWNED BY proveedor.codigo;
+
+
+--
+-- TOC entry 185 (class 1259 OID 166679)
+-- Name: tipo_venta; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE tipo_venta (
+    codigo integer NOT NULL,
+    nombre character varying(100) NOT NULL,
+    descripcion character varying(200),
+    estado boolean DEFAULT true NOT NULL
+);
+
+
+ALTER TABLE public.tipo_venta OWNER TO postgres;
+
+--
+-- TOC entry 184 (class 1259 OID 166677)
+-- Name: tipoVenta_codigo_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE "tipoVenta_codigo_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public."tipoVenta_codigo_seq" OWNER TO postgres;
+
+--
+-- TOC entry 2110 (class 0 OID 0)
+-- Dependencies: 184
+-- Name: tipoVenta_codigo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE "tipoVenta_codigo_seq" OWNED BY tipo_venta.codigo;
+
+
+--
+-- TOC entry 169 (class 1259 OID 125602)
+-- Name: unidad_medida; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE unidad_medida (
+    codigo integer NOT NULL,
+    nombre character varying(100) NOT NULL,
+    descripcion character varying(200),
+    estado boolean DEFAULT true NOT NULL
+);
+
+
+ALTER TABLE public.unidad_medida OWNER TO postgres;
+
+--
+-- TOC entry 168 (class 1259 OID 125600)
+-- Name: unidad_medida_codigo_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE unidad_medida_codigo_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.unidad_medida_codigo_seq OWNER TO postgres;
+
+--
+-- TOC entry 2111 (class 0 OID 0)
+-- Dependencies: 168
+-- Name: unidad_medida_codigo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE unidad_medida_codigo_seq OWNED BY unidad_medida.codigo;
+
+
+--
+-- TOC entry 175 (class 1259 OID 125681)
+-- Name: usuario; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE usuario (
+    idusuario integer NOT NULL,
+    nombre_usuario character varying(80) NOT NULL,
+    contrasena character varying(32) NOT NULL,
+    estado boolean DEFAULT true NOT NULL
+);
+
+
+ALTER TABLE public.usuario OWNER TO postgres;
+
+--
+-- TOC entry 174 (class 1259 OID 125679)
+-- Name: usuario_idusuario_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE usuario_idusuario_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.usuario_idusuario_seq OWNER TO postgres;
+
+--
+-- TOC entry 2112 (class 0 OID 0)
+-- Dependencies: 174
+-- Name: usuario_idusuario_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE usuario_idusuario_seq OWNED BY usuario.idusuario;
+
+
+--
+-- TOC entry 187 (class 1259 OID 166690)
+-- Name: venta; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE venta (
+    codigo integer NOT NULL,
+    serie character varying(5),
+    numero character varying(10) NOT NULL,
+    cliente character varying(8),
+    fecha_registro date DEFAULT now() NOT NULL,
+    fecha_venta date NOT NULL,
+    estado boolean DEFAULT true NOT NULL,
+    usuario integer NOT NULL,
+    tipo_venta integer NOT NULL
+);
+
+
+ALTER TABLE public.venta OWNER TO postgres;
+
+--
+-- TOC entry 186 (class 1259 OID 166688)
+-- Name: venta_codigo_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE venta_codigo_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.venta_codigo_seq OWNER TO postgres;
+
+--
+-- TOC entry 2113 (class 0 OID 0)
+-- Dependencies: 186
+-- Name: venta_codigo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE venta_codigo_seq OWNED BY venta.codigo;
+
+
+--
+-- TOC entry 2022 (class 2604 OID 125621)
+-- Name: codigo_cat; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY categoria_producto ALTER COLUMN codigo_cat SET DEFAULT nextval('categoria_producto_codigo_cat_seq'::regclass);
+
+
+--
+-- TOC entry 2033 (class 2604 OID 158445)
+-- Name: codigo; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY compra ALTER COLUMN codigo SET DEFAULT nextval('compra_codigo_seq'::regclass);
+
+
+--
+-- TOC entry 2024 (class 2604 OID 125639)
+-- Name: codigo; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY presentacion ALTER COLUMN codigo SET DEFAULT nextval('presentacion_codigo_seq'::regclass);
+
+
+--
+-- TOC entry 2028 (class 2604 OID 133813)
+-- Name: codigo; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY producto ALTER COLUMN codigo SET DEFAULT nextval('producto_codigo_seq'::regclass);
+
+
+--
+-- TOC entry 2031 (class 2604 OID 150210)
+-- Name: codigo; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY proveedor ALTER COLUMN codigo SET DEFAULT nextval('proveedor_codigo_seq'::regclass);
+
+
+--
+-- TOC entry 2035 (class 2604 OID 166682)
+-- Name: codigo; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY tipo_venta ALTER COLUMN codigo SET DEFAULT nextval('"tipoVenta_codigo_seq"'::regclass);
+
+
+--
+-- TOC entry 2020 (class 2604 OID 125605)
+-- Name: codigo; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY unidad_medida ALTER COLUMN codigo SET DEFAULT nextval('unidad_medida_codigo_seq'::regclass);
+
+
+--
+-- TOC entry 2026 (class 2604 OID 125684)
+-- Name: idusuario; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY usuario ALTER COLUMN idusuario SET DEFAULT nextval('usuario_idusuario_seq'::regclass);
+
+
+--
+-- TOC entry 2037 (class 2604 OID 166693)
+-- Name: codigo; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY venta ALTER COLUMN codigo SET DEFAULT nextval('venta_codigo_seq'::regclass);
+
+
+--
+-- TOC entry 2078 (class 0 OID 125616)
+-- Dependencies: 170
+-- Data for Name: categoria_producto; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY categoria_producto (codigo_cat, nombre, descripcion, estado) FROM stdin;
+17	LIJAS	S/N	t
+18	SOCALES	S/N	t
+19	CINTAS	S/N	t
+16	PEGAMENTOS	S/N	t
+15	CLAVOS	S/N	t
+14	COLA	S/N	t
+13	ADAPTADOR FOCOS	S/N	t
+12	FOCOS	S/N	t
+11	TOMA CORREINTES	S/N	t
+10	LLAVES UNIVERSALES	S/N	t
+9	LLAVES DE PASO	S/N	t
+8	ESMATES	S/N	t
+21	CONSTRUCCION	S/N	t
+\.
+
+
+--
+-- TOC entry 2114 (class 0 OID 0)
+-- Dependencies: 171
+-- Name: categoria_producto_codigo_cat_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('categoria_producto_codigo_cat_seq', 21, true);
+
+
+--
+-- TOC entry 2090 (class 0 OID 158442)
+-- Dependencies: 182
+-- Data for Name: compra; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY compra (codigo, serie, numero_factura, proveedor, fecha_compra, fecha_registro, usuario) FROM stdin;
+57	00010	0000000222	5	2015-02-03	2015-02-03	1
+58	00002	0000000555	5	2015-02-03	2015-02-03	1
+59	00123	0000022323	5	2015-02-03	2015-02-03	1
+60	00321	0000002121	5	2015-02-03	2015-02-03	1
+61	00000	0000000000	9	2015-02-04	2015-02-04	1
+62	00000	0000000000	9	2015-02-04	2015-02-04	1
+63	00001	0000000222	6	2015-02-04	2015-02-04	1
+64	00006	0000006555	6	2015-02-04	2015-02-04	1
+65	00025	0000000055	5	2015-02-04	2015-02-04	1
+66	00012	0000000222	5	2015-02-05	2015-02-05	1
+67	00098	0000000098	5	2015-02-05	2015-02-05	1
+68	00008	0000000008	8	2015-02-05	2015-02-05	1
+\.
+
+
+--
+-- TOC entry 2115 (class 0 OID 0)
+-- Dependencies: 181
+-- Name: compra_codigo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('compra_codigo_seq', 68, true);
+
+
+--
+-- TOC entry 2091 (class 0 OID 158459)
+-- Dependencies: 183
+-- Data for Name: detalle_compra; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY detalle_compra (codigo_compra, codigo_producto, cantidad) FROM stdin;
+57	32	10.00
+57	26	450.00
+58	32	100.00
+59	34	100.00
+59	33	100.00
+60	33	100.00
+60	34	100.00
+61	34	25.00
+62	34	115.00
+62	26	600.00
+63	35	300.00
+64	35	700.00
+65	35	100.00
+66	34	10.00
+67	36	300.00
+68	37	2000.00
+\.
+
+
+--
+-- TOC entry 2088 (class 0 OID 158415)
+-- Dependencies: 180
+-- Data for Name: detalle_presentaciones; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY detalle_presentaciones (codigoproducto, codigopresentacion) FROM stdin;
+26	48
+26	49
+25	48
+25	49
+28	49
+28	48
+27	48
+27	49
+34	53
+34	54
+33	53
+33	54
+35	55
+35	56
+36	57
+32	58
+32	54
+37	58
+37	54
+\.
+
+
+--
+-- TOC entry 2096 (class 0 OID 166697)
+-- Dependencies: 188
+-- Data for Name: detalle_venta; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY detalle_venta (codigo_venta, codigo_producto, cantidad, precio, cantidad_presentacion) FROM stdin;
+37	32	10.00	10.00	10.00
+38	32	10.00	10.00	10.00
+39	32	100.00	10.00	10.00
+40	26	45.00	10.00	1.00
+41	26	90.00	10.00	2.00
+42	34	10.00	10.00	10.00
+42	33	10.00	10.00	10.00
+43	33	10000.00	10.00	10.00
+44	34	1230.00	23.00	1230.00
+44	26	555525.00	2333.00	12345.00
+45	34	12.00	22.30	12.00
+46	34	20.00	22.00	20.00
+47	35	1.00	10.00	1.00
+48	35	10.00	80.00	1.00
+49	35	1.00	10.00	1.00
+50	34	100.00	111.00	100.00
+51	36	20.00	2.00	20.00
+\.
+
+
+--
+-- TOC entry 2081 (class 0 OID 125636)
+-- Dependencies: 173
+-- Data for Name: presentacion; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY presentacion (codigo, unidad_medida, nombre, cantidad, estado, descripcion) FROM stdin;
+48	23	BOLSA 45	45	t	S/N
+49	23	BOLSA 20	20	t	S/N
+50	23	CAJA DE CLAVOS	10	t	S/N
+51	22	CAJA DE LLAVE	1	t	S/N
+52	22	CAJA 10 LLAVES	10	t	S/N
+53	22	LADRILLO	1	t	S/N
+54	22	MILLAR LADRILLO	1000	t	S/N
+55	22	BALDE PINTURA	1	t	S/N
+56	22	CAJA DE PINTURAS	10	t	S/N
+57	22	LIJAS	1	t	S/N
+58	22	UN LADRILLO	1	t	S/N
+59	22	MILLAR LADRILLO	1000	t	S/N
+\.
+
+
+--
+-- TOC entry 2116 (class 0 OID 0)
+-- Dependencies: 172
+-- Name: presentacion_codigo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('presentacion_codigo_seq', 59, true);
+
+
+--
+-- TOC entry 2085 (class 0 OID 133810)
+-- Dependencies: 177
+-- Data for Name: producto; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY producto (codigo, categoria, color, descripcion, estado, nombre, stock, unida_medida) FROM stdin;
+27	21	BLANCO OSCURO	S/N	t	YESO 18 KG	460.00	23
+28	21	BLANCO	S/N	t	YESO 20 KG	400.00	23
+29	21	S/N	S/N	t	LLAVE INGLESA	0.00	22
+30	12	S/N	S/N	t	FOCOS 45	0.00	22
+25	14	ROJO	S/N	t	CEMENTO PACASMAYO	33435.00	23
+31	21	S/N	S/N	t	CLAVOS	0.00	22
+32	21	S/N	S/N	t	LLAVE DE PASO	-10.00	22
+33	21	S/N	S/N	t	LADRILLO PANDERETA	-9810.00	22
+26	21	AZUL	S/N	t	CEMENTO PASACAMAYO	-553960.00	23
+35	16	ROJA	S/N	t	PINTURA	1088.00	22
+34	21	S/N	S/N	t	LADRILLO HUECO	-1022.00	22
+36	17	S/N	S/N	t	LIJAS	280.00	22
+37	21	S/N	S/N	t	LADRILLO X	2000.00	22
+\.
+
+
+--
+-- TOC entry 2117 (class 0 OID 0)
+-- Dependencies: 176
+-- Name: producto_codigo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('producto_codigo_seq', 37, true);
+
+
+--
+-- TOC entry 2087 (class 0 OID 150207)
+-- Dependencies: 179
+-- Data for Name: proveedor; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY proveedor (codigo, nombre, ruc, direccion, estado) FROM stdin;
+3	TRANSPORTES DANIEL	20480442122	CHICLAYO	f
+5	MULTICERVICIO  JOSE	12312312312	LIMA	t
+8	MULTISERVICIOS JOSE	1111111123 	LIMAS	t
+9	LIMA SERVIS	32132132165	CHICLAYO	t
+6	MOVIL OURS	9999999994 	MODFICADO	t
+10	LUBRICANTES JOSE	2222       	LIMASAS	t
+11	NUEVPP	12345678915	NUEVOOO	t
+12	SDFSDF	33333333330	SDFSDF	t
+14	NUEVO PRO	99999876662	ASDAS	t
+\.
+
+
+--
+-- TOC entry 2118 (class 0 OID 0)
+-- Dependencies: 178
+-- Name: proveedor_codigo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('proveedor_codigo_seq', 14, true);
+
+
+--
+-- TOC entry 2119 (class 0 OID 0)
+-- Dependencies: 184
+-- Name: tipoVenta_codigo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('"tipoVenta_codigo_seq"', 3, true);
+
+
+--
+-- TOC entry 2093 (class 0 OID 166679)
+-- Dependencies: 185
+-- Data for Name: tipo_venta; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY tipo_venta (codigo, nombre, descripcion, estado) FROM stdin;
+1	FACTURA	VENTA POR FACTURA 	t
+2	BOLETA	VENTA POR BOLETA	t
+3	N/A	NO SE EMITE NADA	t
+\.
+
+
+--
+-- TOC entry 2077 (class 0 OID 125602)
+-- Dependencies: 169
+-- Data for Name: unidad_medida; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY unidad_medida (codigo, nombre, descripcion, estado) FROM stdin;
+22	UNIDADES	SE CONSIDERA SOLO UNIDADES	t
+23	KG	KILOGRAMOS, SE UTILIZA PARA LOS PESOS	t
+24	M3	SE UTLIZA EN OS VOLUMENES	t
+25	LITROS	PARA LOS BALDES DE PINTURA, TINER ETC	t
+26	GALONES	S/N	t
+\.
+
+
+--
+-- TOC entry 2120 (class 0 OID 0)
+-- Dependencies: 168
+-- Name: unidad_medida_codigo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('unidad_medida_codigo_seq', 26, true);
+
+
+--
+-- TOC entry 2083 (class 0 OID 125681)
+-- Dependencies: 175
+-- Data for Name: usuario; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY usuario (idusuario, nombre_usuario, contrasena, estado) FROM stdin;
+1	DARWINOMAR	827ccb0eea8a706c4c34a16891f84e7b	t
+\.
+
+
+--
+-- TOC entry 2121 (class 0 OID 0)
+-- Dependencies: 174
+-- Name: usuario_idusuario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('usuario_idusuario_seq', 1, true);
+
+
+--
+-- TOC entry 2095 (class 0 OID 166690)
+-- Dependencies: 187
+-- Data for Name: venta; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY venta (codigo, serie, numero, cliente, fecha_registro, fecha_venta, estado, usuario, tipo_venta) FROM stdin;
+37	00032	0000000111	123	2015-02-03	2015-02-03	t	1	2
+38	00008	0000000888	47158520	2015-02-03	2015-02-03	t	1	1
+39	00005	0000000555	123	2015-02-03	2015-02-03	t	1	1
+40	00005	0000000555	321321	2015-02-03	2015-02-03	t	1	1
+41	00000	0000000225	54454545	2015-02-03	2015-02-03	t	1	1
+42	00032	0000000032	3232	2015-02-03	2015-02-03	t	1	1
+43	00004	0000000555	10	2015-02-03	2015-02-03	t	1	1
+44	00000	0000012312	123	2015-02-04	2015-02-04	t	1	1
+45	01222	0000000225		2015-02-04	2015-02-04	t	1	1
+46	00009	0000000001	22	2015-02-04	2015-02-04	t	1	1
+47	00032	0000000032	32132132	2015-02-04	2015-02-04	t	1	1
+48	00032	0000000032	3232	2015-02-04	2015-02-04	t	1	1
+49	00005	0000000055	333	2015-02-04	2015-02-04	t	1	1
+50	00012	0000000222	22222222	2015-02-05	2015-02-05	t	1	1
+51	00098	0000000087	12312312	2015-02-05	2015-02-05	t	1	1
+\.
+
+
+--
+-- TOC entry 2122 (class 0 OID 0)
+-- Dependencies: 186
+-- Name: venta_codigo_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('venta_codigo_seq', 51, true);
+
+
+--
+-- TOC entry 2052 (class 2606 OID 125687)
+-- Name: id_usuario; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+--
+
+ALTER TABLE ONLY usuario
+    ADD CONSTRAINT id_usuario PRIMARY KEY (idusuario);
+
+
+--
+-- TOC entry 2046 (class 2606 OID 125627)
+-- Name: pk_cateoria_producto; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+--
+
+ALTER TABLE ONLY categoria_producto
+    ADD CONSTRAINT pk_cateoria_producto PRIMARY KEY (codigo_cat);
+
+
+--
+-- TOC entry 2050 (class 2606 OID 125641)
+-- Name: pk_cidigo_presentacion; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+--
+
+ALTER TABLE ONLY presentacion
+    ADD CONSTRAINT pk_cidigo_presentacion PRIMARY KEY (codigo);
+
+
+--
+-- TOC entry 2054 (class 2606 OID 133816)
+-- Name: pk_codigo_producto; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+--
+
+ALTER TABLE ONLY producto
+    ADD CONSTRAINT pk_codigo_producto PRIMARY KEY (codigo);
+
+
+--
+-- TOC entry 2060 (class 2606 OID 158447)
+-- Name: pk_compra; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+--
+
+ALTER TABLE ONLY compra
+    ADD CONSTRAINT pk_compra PRIMARY KEY (codigo);
+
+
+--
+-- TOC entry 2056 (class 2606 OID 150213)
+-- Name: pk_proveedor; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+--
+
+ALTER TABLE ONLY proveedor
+    ADD CONSTRAINT pk_proveedor PRIMARY KEY (codigo);
+
+
+--
+-- TOC entry 2062 (class 2606 OID 166684)
+-- Name: pk_tipo_venta; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+--
+
+ALTER TABLE ONLY tipo_venta
+    ADD CONSTRAINT pk_tipo_venta PRIMARY KEY (codigo);
+
+
+--
+-- TOC entry 2042 (class 2606 OID 125608)
+-- Name: pk_unidad_medida; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+--
+
+ALTER TABLE ONLY unidad_medida
+    ADD CONSTRAINT pk_unidad_medida PRIMARY KEY (codigo);
+
+
+--
+-- TOC entry 2064 (class 2606 OID 166696)
+-- Name: pk_venta; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+--
+
+ALTER TABLE ONLY venta
+    ADD CONSTRAINT pk_venta PRIMARY KEY (codigo);
+
+
+--
+-- TOC entry 2048 (class 2606 OID 125633)
+-- Name: u_nombre_cat; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+--
+
+ALTER TABLE ONLY categoria_producto
+    ADD CONSTRAINT u_nombre_cat UNIQUE (nombre);
+
+
+--
+-- TOC entry 2058 (class 2606 OID 150219)
+-- Name: u_ruc; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+--
+
+ALTER TABLE ONLY proveedor
+    ADD CONSTRAINT u_ruc UNIQUE (ruc);
+
+
+--
+-- TOC entry 2044 (class 2606 OID 125610)
+-- Name: unik_nombre; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+--
+
+ALTER TABLE ONLY unidad_medida
+    ADD CONSTRAINT unik_nombre UNIQUE (nombre);
+
+
+--
+-- TOC entry 2071 (class 2606 OID 158467)
+-- Name: fk_compra_detalle; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY detalle_compra
+    ADD CONSTRAINT fk_compra_detalle FOREIGN KEY (codigo_compra) REFERENCES compra(codigo);
+
+
+--
+-- TOC entry 2074 (class 2606 OID 174957)
+-- Name: fk_detalle_venta; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY detalle_venta
+    ADD CONSTRAINT fk_detalle_venta FOREIGN KEY (codigo_venta) REFERENCES venta(codigo);
+
+
+--
+-- TOC entry 2068 (class 2606 OID 158434)
+-- Name: fk_presentacion_de; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY detalle_presentaciones
+    ADD CONSTRAINT fk_presentacion_de FOREIGN KEY (codigopresentacion) REFERENCES presentacion(codigo);
+
+
+--
+-- TOC entry 2067 (class 2606 OID 158429)
+-- Name: fk_producto_de; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY detalle_presentaciones
+    ADD CONSTRAINT fk_producto_de FOREIGN KEY (codigoproducto) REFERENCES producto(codigo);
+
+
+--
+-- TOC entry 2070 (class 2606 OID 158462)
+-- Name: fk_producto_detalle; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY detalle_compra
+    ADD CONSTRAINT fk_producto_detalle FOREIGN KEY (codigo_producto) REFERENCES producto(codigo);
+
+
+--
+-- TOC entry 2075 (class 2606 OID 174962)
+-- Name: fk_producto_detalle; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY detalle_venta
+    ADD CONSTRAINT fk_producto_detalle FOREIGN KEY (codigo_producto) REFERENCES producto(codigo);
+
+
+--
+-- TOC entry 2069 (class 2606 OID 174981)
+-- Name: fk_proveedor; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY compra
+    ADD CONSTRAINT fk_proveedor FOREIGN KEY (proveedor) REFERENCES proveedor(codigo);
+
+
+--
+-- TOC entry 2072 (class 2606 OID 174986)
+-- Name: fk_tipo_venta; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY venta
+    ADD CONSTRAINT fk_tipo_venta FOREIGN KEY (tipo_venta) REFERENCES tipo_venta(codigo);
+
+
+--
+-- TOC entry 2065 (class 2606 OID 158485)
+-- Name: fk_unidad_medida; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY presentacion
+    ADD CONSTRAINT fk_unidad_medida FOREIGN KEY (unidad_medida) REFERENCES unidad_medida(codigo);
+
+
+--
+-- TOC entry 2066 (class 2606 OID 174968)
+-- Name: fk_unidad_medida_producto; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY producto
+    ADD CONSTRAINT fk_unidad_medida_producto FOREIGN KEY (unida_medida) REFERENCES unidad_medida(codigo);
+
+
+--
+-- TOC entry 2073 (class 2606 OID 174991)
+-- Name: fk_usuario_venta; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY venta
+    ADD CONSTRAINT fk_usuario_venta FOREIGN KEY (usuario) REFERENCES usuario(idusuario);
+
+
+--
+-- TOC entry 2103 (class 0 OID 0)
+-- Dependencies: 5
+-- Name: public; Type: ACL; Schema: -; Owner: postgres
+--
+
+REVOKE ALL ON SCHEMA public FROM PUBLIC;
+REVOKE ALL ON SCHEMA public FROM postgres;
+GRANT ALL ON SCHEMA public TO postgres;
+GRANT ALL ON SCHEMA public TO PUBLIC;
+
+
+-- Completed on 2015-02-05 15:05:12
+
+--
+-- PostgreSQL database dump complete
+--
+
